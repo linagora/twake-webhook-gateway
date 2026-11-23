@@ -1,0 +1,19 @@
+# What the gateway needs to run locally: RabbitMQ and Postgres. The SSO and
+# the publishing apps are those of a Twake Workplace stack.
+services:
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    # The image sets no USER, so without it the broker runs as root.
+    user: '999:999'
+    ports:
+      - '127.0.0.1:5672:5672'
+      - '127.0.0.1:15672:15672'
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
