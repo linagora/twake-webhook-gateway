@@ -263,6 +263,20 @@ describe.skipIf(TEST_DATABASE_URL === undefined)(
       expect(await owner`select * from subscriptions`).toHaveLength(0)
     })
 
+    it('keeps an organization deletion to its tenant as a role that owns the tables', async () => {
+      await subscribe()
+      await subscribe(caller({ organizationId: 'other' }))
+      const owning = createDb(database.ownerUrl, { log: console })
+      await accountHandler({
+        db: owning.db,
+        logger: { warn: () => undefined }
+      })('domain.organization.deleted', { organizationId: 'acme123' })
+      await owning.sql.end()
+      expect(await owner`select org_id from subscriptions`).toEqual([
+        { org_id: 'other' }
+      ])
+    })
+
     it('ends subscriptions failing for 7 days and forgets old events', async () => {
       const { subscription } = await subscribe()
       await subscribe()
