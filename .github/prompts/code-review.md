@@ -18,16 +18,17 @@ already posted. If an issue is already raised there, do not repeat it.
 
 ## How to review
 
-1. Read `README.md` and the documents of `docs/` first: they describe the
-   flow of an event, the tables and their row level security, the API, the
-   configuration and the operations.
+1. Read `README.md` first, then the documents of `docs/` that cover what the
+   diff changes: they describe the flow of an event, the tables and their row
+   level security, the API, the configuration and the operations.
 2. Read the full diff in `pr.diff` at the repository root, then open the
    surrounding code of every changed function. Callers outside the diff can
    break.
 3. Only report issues you can justify with a concrete failure scenario
    (input or state, then wrong result). No speculative "consider" remarks.
 4. This is a read-only review: you have no shell and you cannot edit files.
-   Read and search the files of the repository, and fetch URLs.
+   Read and search the files of the repository. Fetch a URL only to confirm
+   or drop a finding you are about to report, never to explore.
 
 ## What to check
 
@@ -72,6 +73,9 @@ than no review at all.
   dependency, and
   `https://raw.githubusercontent.com/<owner>/<repo>/<tag or commit>/<path>`
   gives the file. Dependencies are not installed in this job.
+- A change limited to `.github/` is checked against the GitHub
+  documentation of what it changes. Do not read the source of the tools it
+  runs, such as OpenCode, unless a finding depends on it.
 - Quote a symbol name, a line number or a code path only when it comes from
   a file you opened in this run.
 - When you cannot open the source, drop the finding. An unverified claim is
