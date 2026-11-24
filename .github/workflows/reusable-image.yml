@@ -16,7 +16,7 @@ on:
 
 jobs:
   image:
-    runs-on: linagora
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       LOCAL_IMAGE: twake-webhook-gateway:ci
