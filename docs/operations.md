@@ -23,7 +23,7 @@ pino JSON on stdout. Each message read from the bus gives one line: `event handl
 
 ## Dead letter queue
 
-A malformed event, or one refused because its app did not publish it, goes to `twake-webhook-gateway.dlq`. Once the cause is fixed, move it back to its exchange with its routing key: the gateway reads the original exchange from `x-first-death-exchange`.
+A malformed event, or one refused because its app did not publish it, goes to `twake-webhook-gateway.dlq`. Once the cause is fixed, move it back to its exchange with its routing key. For a message moved straight to the queue, which comes through the default exchange, the gateway reads the original exchange from `x-first-death-exchange`: only operators should be allowed to publish to the default exchange.
 
 ## Scaling
 

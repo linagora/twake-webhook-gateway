@@ -2,7 +2,13 @@ import { DeadLetterError } from '@linagora/rabbitmq-client'
 import { describe, expect, it } from 'vitest'
 import { RejectedEventError } from '../events/errors.ts'
 import { taskAssigned } from '../testing/fixtures.ts'
-import { consumerStats, deliveryHandler, loggedIds } from './amqp.ts'
+import {
+  consumerStats,
+  deliveryHandler,
+  loggedIds,
+  routeMessages,
+  type Source
+} from './amqp.ts'
 
 function recorder() {
   const lines: { level: string; object: object; message: string }[] = []
@@ -82,5 +88,31 @@ describe('deliveryHandler', () => {
         object: { outcome: 'dead_lettered', reason: 'the source is wrong' }
       }
     ])
+  })
+})
+
+describe('routeMessages', () => {
+  const source = (exchange: string): Source => ({
+    exchange,
+    routingKeys: ['#'],
+    passive: true,
+    handle: () => Promise.resolve(exchange)
+  })
+  const route = routeMessages([source('activity'), source('b2b')])
+  const from = (exchange: string, headers: Record<string, unknown> = {}) =>
+    route({}, { exchange, headers } as Parameters<typeof route>[1])
+
+  it('routes a message by the exchange it came from', async () => {
+    expect(await from('b2b')).toBe('b2b')
+  })
+
+  it('ignores the first death header a publisher sets', async () => {
+    expect(await from('activity', { 'x-first-death-exchange': 'b2b' })).toBe(
+      'activity'
+    )
+  })
+
+  it('reads the first death header of a message moved to the queue', async () => {
+    expect(await from('', { 'x-first-death-exchange': 'b2b' })).toBe('b2b')
   })
 })
