@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   verify:
-    runs-on: linagora
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -45,7 +45,7 @@ jobs:
 
   release:
     needs: [verify, publish]
-    runs-on: linagora
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
