@@ -1,7 +1,7 @@
 import { and, eq, lte, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { RejectedEventError } from '../../events/errors.ts'
-import { inTenant, type Db } from '../../infra/db.ts'
+import { inTenant, tenantOf, type Db } from '../../infra/db.ts'
 import {
   deliveries,
   disabledMembers,
@@ -67,9 +67,14 @@ export function accountHandler(deps: {
       }
       case 'domain.organization.deleted': {
         const { organizationId } = parse(organizationDeleted, body, routingKey)
+        // Filtered here too: row level security does not bind a role that
+        // owns the tables.
+        const tenant = tenantOf(organizationId)
         await inTenant(db, { organizationId }, async tx => {
-          await tx.delete(subscriptions)
-          await tx.delete(disabledMembers)
+          await tx.delete(subscriptions).where(eq(subscriptions.tenant, tenant))
+          await tx
+            .delete(disabledMembers)
+            .where(eq(disabledMembers.tenant, tenant))
         })
         return 'applied'
       }
@@ -92,7 +97,14 @@ export function accountHandler(deps: {
                 }
               })
             // Neither delivered nor kept while the member is disabled.
-            await tx.delete(deliveries).where(eq(deliveries.owner, owner))
+            await tx
+              .delete(deliveries)
+              .where(
+                and(
+                  eq(deliveries.tenant, tenantOf(event.organizationId)),
+                  eq(deliveries.owner, owner)
+                )
+              )
           }
         )
         return 'applied'
@@ -107,6 +119,7 @@ export function accountHandler(deps: {
             .delete(disabledMembers)
             .where(
               and(
+                eq(disabledMembers.orgId, event.organizationId),
                 eq(disabledMembers.owner, event.uuid.toLowerCase()),
                 lte(disabledMembers.disabledAt, at)
               )
