@@ -79,8 +79,10 @@ export function consumerAlive(
 }
 
 // Every source shares one queue; the exchange tells them apart. A message moved
-// back from the dead letter queue arrives from another exchange, and RabbitMQ
-// keeps the one it was first published to in a header.
+// from the dead letter queue straight to the queue arrives from the default
+// exchange, and RabbitMQ keeps the one it was first published to in a header.
+// The header is read in that case only: a publisher can set it, and would
+// pass its message off as another exchange's.
 export function routeMessages(sources: readonly [Source, ...Source[]]): Handle {
   const byExchange = new Map(sources.map(source => [source.exchange, source]))
   if (byExchange.size !== sources.length) {
@@ -89,7 +91,9 @@ export function routeMessages(sources: readonly [Source, ...Source[]]): Handle {
   return (body, properties) => {
     const firstDeath = properties.headers['x-first-death-exchange']
     const exchange =
-      typeof firstDeath === 'string' ? firstDeath : properties.exchange
+      properties.exchange === '' && typeof firstDeath === 'string'
+        ? firstDeath
+        : properties.exchange
     return (byExchange.get(exchange) ?? sources[0]).handle(body, properties)
   }
 }
